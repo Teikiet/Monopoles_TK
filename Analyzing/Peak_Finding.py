@@ -31,7 +31,7 @@ def if_else_write(i, row, column):
 def save_data_2_csv(file_path ,inputfilename, detectordescription, station_ID, channel_ID):
     # Data to be written into columns
     if os.path.isfile(inputfilename):
-        trace, times, S_ID, C_ID, event_id = get_nur_data_from_file(inputfilename, detectordescription, station_ID, channel_ID)
+        trace, times, S_ID, C_ID, event_id = get_nur_data_from_file(inputfilename, detectordescription, station_ID, channel_ID, 0)
         # Determine the maximum column length
         max_length = max(len(trace), len(times), len(S_ID), len(C_ID), len(event_id))
         print("Max length of data:", max_length)
@@ -52,11 +52,15 @@ def save_data_2_csv(file_path ,inputfilename, detectordescription, station_ID, c
                 writer.writerow(row)
         print("Finish writing data into csv file")
     elif os.path.isdir(inputfilename):
+        isExist = os.path.exists(file_path)
+        if not isExist:
+            with open(file_path, 'w', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow(['Traces', 'Times', 'station', 'channel', 'event'])
         with open(file_path, 'a', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(['Traces', 'Times', 'station', 'channel', 'event'])  # Write header row
+            e_id = 0
             #########################################
-            e_id = 139
             for filename in os.listdir(inputfilename):
                 #reset data:
                 event_id = np.array([])
@@ -263,7 +267,7 @@ def count_peak(data, station_ID, channel_ID, bin_size, threshold, sample_size):
     num_row = len(data_frame)
     E_id = 0
     #noise, _, _ = get_noise(data_frame['Traces'], data_frame['Times'], bin_size)
-    noise = 2.8e-05
+    noise = 1.0661514487245143e-05 #2.8e-05
     for i in np.arange(0, num_row, sample_size):
         try: 
             trace = np.array(data_frame.loc[i:i+sample_size]['Traces'])
