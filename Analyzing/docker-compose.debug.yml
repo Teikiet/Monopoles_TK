@@ -1,0 +1,11 @@
+version: '3.4'
+
+services:
+  analyzing:
+    image: analyzing
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    command: ["sh", "-c", "pip install debugpy -t /tmp && python /tmp/debugpy --wait-for-client --listen 0.0.0.0:5678 Get_hdf5_data.py "]
+    ports:
+      - 5678:5678
