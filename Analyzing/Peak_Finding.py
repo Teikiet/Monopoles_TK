@@ -221,19 +221,19 @@ def get_peak(v, t, noise, threshold):
     #get the index of peak
     peaks, _ = find_peaks(snr, height=threshold)
     num_peak = len(peaks)
-    #if num_peak == 0 and max(snr) <= 0.1:
-    #    plt.plot(t, snr, 'b')
-    #    plt.plot(t, np.ones(len(t))*threshold, 'r')
-    #    plt.show()
-    if max(snr) > threshold and num_peak == 0:
-        num_peak = 1
-        peaks = np.where(snr == max(snr))
-    v_peak = v[peaks]
-    t_peak = t[peaks]
-    noise = np.ones(len(v_peak))*noise
+    if max(snr) == 0: #skip nan waveform
+        pass
+    else:
+        if max(snr) > threshold and num_peak == 0:
+            num_peak = 1
+            peaks = np.where(snr == max(snr))
+        v_peak = v[peaks] #voltage of peak
+        t_peak = t[peaks] #time of peak
+        d_t_peak = np.diff(t_peak) #time difference between peaks
+        noise = np.ones(len(v_peak))*noise
     #if max(snr) < 1:
     #    v_peak, t_peak, num_peak, noise = np.array([]), np.array([]), np.array([]), np.array([])
-    return v_peak, t_peak, num_peak, noise
+    return v_peak, t_peak, num_peak, noise, d_t_peak
 
 #Get noise and peak per event:
 def get_noise_and_peak_from_bin(trace, times, bin_size, threshold, NOISE):
@@ -242,9 +242,9 @@ def get_noise_and_peak_from_bin(trace, times, bin_size, threshold, NOISE):
     #v_peak, t_peak, num_peak, noise = np.array([]), np.array([]), np.array([]), np.array([])
     #NOISE = get_noise(trace) 
     V, T = binning_data(trace, times, bin_size)
-    v_peak, t_peak, num_peak, noise = get_peak(V, T, NOISE, threshold)
+    v_peak, t_peak, num_peak, noise, d_t_peak = get_peak(V, T, NOISE, threshold)
 
-    return v_peak, t_peak, num_peak, noise
+    return v_peak, t_peak, num_peak, noise, d_t_peak
     #Break the array into smaller chunk
 """ num_subarrays = int(len(trace)/sample_size)
     subtrace = np.array_split(trace, num_subarrays)
@@ -263,6 +263,7 @@ def get_noise_and_peak_from_bin(trace, times, bin_size, threshold, NOISE):
 def count_peak(data, station_ID, channel_ID, bin_size, threshold, sample_size):
     start_time = TIME.time()
     V_peak, T_peak, PEAK, NOISE = np.array([]), np.array([]), np.array([]), np.array([])
+    d_T_peak = np.array([])
     data_frame = pd.read_csv(data)
     num_row = len(data_frame)
     E_id = 0
@@ -277,12 +278,13 @@ def count_peak(data, station_ID, channel_ID, bin_size, threshold, sample_size):
             e_id = np.array(data_frame.loc[i:i+sample_size]['event'])
             #print(s_id, c_id)
             if any(item in s_id for item in station_ID) and any(item in c_id for item in channel_ID):
-                v, t, p, n = get_noise_and_peak_from_bin(trace, times, bin_size, threshold, noise)
+                v, t, p, n, dt = get_noise_and_peak_from_bin(trace, times, bin_size, threshold, noise)
                 #print("Peak", p,"Channel ID:", min(c_id), "Station ID:", min(s_id), max(v)/noise)
                 V_peak = np.append(V_peak, v)
                 T_peak = np.append(T_peak, t)
                 PEAK = np.append(PEAK, p)
                 NOISE = np.append(NOISE, n)
+                d_T_peak = np.append(d_T_peak, dt)
                 #print(f"Number of peak per {sample_size*0.625}ns:", p, ",Channel ID:", min(c_id), ",Station ID:", min(s_id))
             if max(e_id) > E_id:
                 E_id = max(e_id)
@@ -297,7 +299,7 @@ def count_peak(data, station_ID, channel_ID, bin_size, threshold, sample_size):
     run_time = str(datetime.timedelta(seconds=time_second))
     print(f"Time taken to get data: ",run_time)
     print("Number of peak:", sum(PEAK), "Mean noise:", np.mean(NOISE))
-    return V_peak, T_peak, PEAK, NOISE
+    return V_peak, T_peak, PEAK, NOISE, d_T_peak
 
 
 
