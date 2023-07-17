@@ -59,7 +59,7 @@ def save_data_2_csv(file_path ,inputfilename, detectordescription, station_ID, c
                 writer.writerow(['Traces', 'Times', 'station', 'channel', 'event'])
         with open(file_path, 'a', newline='') as file:
             writer = csv.writer(file)
-            e_id = 0
+            e_id = 0 #Change it if the nur folder is too big
             #########################################
             for filename in os.listdir(inputfilename):
                 #reset data:
