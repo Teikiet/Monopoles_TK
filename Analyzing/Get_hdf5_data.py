@@ -14,6 +14,19 @@ import uuid
 import glob
 import os
 import math
+import sys
+
+temp_stdout = None
+# Disable
+def blockPrint():
+    global temp_stdout
+    temp_stdout = sys.stdout
+    sys.stdout = open(os.devnull, 'w')
+
+# Restore
+def enablePrint():
+    global temp_stdout
+    sys.stdout = temp_stdout
 
 #################################################################
 #Print out all the attributes and keys from the hdf5 file
@@ -33,6 +46,7 @@ def get_attr_data(PATH):
 #Calculating the effective volume from the output file:
 def get_Veff_from_file(PATH):
     try:
+        blockPrint()
         data = get_Veff_Aeff(PATH)
         Veffs, energies, energies_low, energies_up, zenith_bins, utrigger_names = get_Veff_Aeff_array(data)
             # calculate the average over all zenith angle bins (in this case only one bin that contains the full sky)
@@ -44,6 +58,7 @@ def get_Veff_from_file(PATH):
             #energies = energies / units.eV
             #Veff / units.km ** 3 / units.sr
             #Veff_error = Veff_error / units.km ** 3 / units.sr
+        enablePrint()
         return Veff, Veff_error, energies
     except:
         return  np.array([]),  np.array([]),  np.array([])
