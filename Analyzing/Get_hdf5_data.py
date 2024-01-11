@@ -55,10 +55,12 @@ def get_Veff_from_file(PATH):
         Veff = get_Veff_water_equivalent(Veff) * 4 * np.pi
             # calculate the uncertainty for the average over all zenith angle bins. The error relative error is just 1./sqrt(N)
         Veff_error = Veff / np.sum(Veffs[:, :, get_index("all_triggers", utrigger_names), 2], axis=1) ** 0.5
+        
             #energies = energies / units.eV
             #Veff / units.km ** 3 / units.sr
             #Veff_error = Veff_error / units.km ** 3 / units.sr
         enablePrint()
+        print(Veff, Veff_error, energies)
         return Veff, Veff_error, energies
     except:
         return  np.array([]),  np.array([]),  np.array([])
@@ -72,13 +74,14 @@ def get_Veff_data(PATH):
         Veff = np.array([])
         Veff_error = np.array([])
         energies = np.array([])
+        
         for filename in os.listdir(PATH):
             file = os.path.join(PATH, filename)
             V_i, Ve_i, e_i = get_Veff_from_file(file)
             Veff = np.append(Veff, V_i)
             Veff_error = np.append(Veff_error, Ve_i)
             energies = np.append(energies, e_i)
-        return Veff, Veff_error, energies
+        return np.mean(Veff), np.mean(Veff_error), np.mean(energies)
     
     else:
         print("No file or folder found, Please try a different path")
@@ -98,25 +101,27 @@ def get_shower_data_from_file(PATH):
     shower_energies = np.array(f["shower_energies"])
     #Type of the shower (so far we only have “em” and “had”)
     shower_type = np.array(f["shower_type"])
-    return shower_id, shower_energies, xx, yy, zz, shower_type
+    triggered = np.array(f["triggered"])
+    return shower_id, shower_energies, xx, yy, zz, shower_type, triggered
 
 def get_shower_data(PATH):
     if os.path.isfile(PATH):
-        shower_id, shower_energies, xx, yy, zz, shower_type = get_shower_data_from_file(PATH)
-        return shower_id, shower_energies, xx, yy, zz, shower_type
+        shower_id, shower_energies, xx, yy, zz, shower_type, triggered = get_shower_data_from_file(PATH)
+        return shower_id, shower_energies, xx, yy, zz, shower_type, triggered
     
     elif os.path.isdir(PATH):
-        shower_id, shower_energies, xx, yy, zz, shower_type = np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
+        shower_id, shower_energies, xx, yy, zz, shower_type, triggered = np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
         for filename in os.listdir(PATH):
             file = os.path.join(PATH, filename)
-            a, b, c, d, f, g = get_shower_data_from_file(file)
+            a, b, c, d, f, g, h = get_shower_data_from_file(file)
             shower_id = np.append(shower_id, a)
             shower_energies = np.append(shower_energies, b)
             xx = np.append(xx, c)
             yy = np.append(yy, d)
             zz = np.append(zz, f)
             shower_type = np.append(shower_type, g)
-        return shower_id, shower_energies, xx, yy, zz, shower_type
+            triggered = np.append(triggered, h)
+        return shower_id, shower_energies, xx, yy, zz, shower_type, triggered
     
     else:
         print("No file or folder found, Please try a different path")
